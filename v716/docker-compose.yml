@@ -1,0 +1,67 @@
+version: "3"
+services:
+  elasticsearch:
+    # 镜像
+    image: elasticsearch:7.16.3
+    #容器名称
+    container_name: "elasticsearch"
+    #映射端口
+    ports:
+      - "${ES_PORT}:${ES_PORT}"
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      # 插件文件挂载
+      - "./elasticsearch/plugins:/usr/share/elasticsearch/plugins"
+      # 数据文件挂载
+      - "./elasticsearch/data:/usr/share/elasticsearch/data"
+    # 开机启动，失败重启
+    restart: always
+    networks:
+      - net-app
+  kibana:
+    # 镜像
+    image: kibana:7.16.3
+    #容器名称
+    container_name: "kibana"
+    #映射端口
+    ports:
+      - "${KIBANA_PORT}:${KIBANA_PORT}"
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      # 插件文件挂载
+      - "./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml"
+    depends_on:
+      # 在elasticsearch启动后再启动
+      - elasticsearch
+    # 开机启动，失败重启
+    restart: always
+    networks:
+      - net-app
+  logstash:
+    # 镜像
+    image: logstash:7.16.3
+    #容器名称
+    container_name: "logstash"
+    #映射端口
+    ports:
+      - "${LOGSTASH_PORT}:${LOGSTASH_PORT}"
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      # logstash的配置文件挂载
+      - "./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf"
+    depends_on:
+      # 在elasticsearch启动后再启动
+      - elasticsearch
+    # 开机启动，失败重启
+    restart: always
+    links:
+      # 可以使用es这个域名访问elasticsearch服务
+      - elasticsearch:es
+    networks:
+      - net-app
+networks:
+  net-app:
+    driver: bridge
